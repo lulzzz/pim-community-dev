@@ -19,8 +19,9 @@ class DateTimeNormalizerSpec extends ObjectBehavior
         $this->shouldHaveType(DateTimeNormalizer::class);
     }
 
-    function it_support_dates(\Datetime $date)
+    function it_support_dates()
     {
+        $date = new \DateTime();
         $this->supportsNormalization(new \stdClass(), 'whatever')->shouldReturn(false);
         $this->supportsNormalization(new \stdClass(), 'storage')->shouldReturn(false);
         $this->supportsNormalization($date, 'whatever')->shouldReturn(false);
