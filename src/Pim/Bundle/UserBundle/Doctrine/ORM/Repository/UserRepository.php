@@ -3,7 +3,6 @@
 namespace Pim\Bundle\UserBundle\Doctrine\ORM\Repository;
 
 use Doctrine\ORM\EntityRepository;
-use Doctrine\ORM\QueryBuilder;
 use Pim\Bundle\UserBundle\Entity\UserInterface;
 use Pim\Bundle\UserBundle\Repository\UserRepositoryInterface;
 
@@ -55,7 +54,7 @@ class UserRepository extends EntityRepository implements UserRepositoryInterface
     /**
      * {@inheritdoc}
      */
-    public function countAll()
+    public function countAll(): int
     {
         $qb = $this->createQueryBuilder('u');
 
