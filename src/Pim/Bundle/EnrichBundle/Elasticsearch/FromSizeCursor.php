@@ -5,6 +5,7 @@ namespace Pim\Bundle\EnrichBundle\Elasticsearch;
 use Akeneo\Bundle\ElasticsearchBundle\Client;
 use Akeneo\Component\StorageUtils\Cursor\CursorInterface;
 use Akeneo\Component\StorageUtils\Repository\CursorableRepositoryInterface;
+use Doctrine\ORM\EntityManagerInterface;
 
 /**
  * Bounded cursor to iterate over items where a start and a limit are defined.
@@ -46,8 +47,7 @@ class FromSizeCursor extends AbstractCursor implements CursorInterface
 
     /**
      * @param Client                        $esClient
-     * @param CursorableRepositoryInterface $productRepository
-     * @param CursorableRepositoryInterface $productModelRepository
+     * @param EntityManagerInterface        $entityManager
      * @param array                         $esQuery
      * @param string                        $indexType
      * @param int                           $pageSize
@@ -56,8 +56,7 @@ class FromSizeCursor extends AbstractCursor implements CursorInterface
      */
     public function __construct(
         Client $esClient,
-        CursorableRepositoryInterface $productRepository,
-        CursorableRepositoryInterface $productModelRepository,
+        EntityManagerInterface $entityManager,
         array $esQuery,
         $indexType,
         $pageSize,
@@ -65,8 +64,7 @@ class FromSizeCursor extends AbstractCursor implements CursorInterface
         $from = 0
     ) {
         $this->esClient = $esClient;
-        $this->productRepository = $productRepository;
-        $this->productModelRepository = $productModelRepository;
+        $this->entityManager = $entityManager;
         $this->esQuery = $esQuery;
         $this->indexType = $indexType;
         $this->pageSize = $pageSize;
@@ -131,5 +129,70 @@ class FromSizeCursor extends AbstractCursor implements CursorInterface
         }
 
         return $identifiers;
+    }
+
+    /**
+     * Get the next items (hydrated from doctrine repository).
+     *
+     * @param array $esQuery
+     *
+     * @return array
+     */
+    protected function getNextItems(array $esQuery): array
+    {
+        $identifierResults = $this->getNextIdentifiers($esQuery);
+        if ($identifierResults->isEmpty()) {
+            return [];
+        }
+
+        $rawProducts = $this->getRawProductFromIdentifier(
+            $identifierResults->getProductIdentifiers()
+        );
+        $rawProductModels = $this->getRawProductModelFromIdentifier(
+            $identifierResults->getProductModelIdentifiers()
+        );
+        $rawItems = array_merge($rawProducts, $rawProductModels);
+
+        return $rawItems;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getRawProductModelFromIdentifier(array $identifiers): array
+    {
+        if (0 === count($identifiers)) {
+            return [];
+        }
+
+        $paramNames = array_map(function ($index) {
+            return '?';
+        }, range(0, count($identifiers) - 1));
+        $sql = 'SELECT * FROM pim_catalog_product_model as product_model WHERE product_model.code IN ('. implode(',', $paramNames) .') AND product_model.product_type = \'product_model\'';
+
+        $stmt = $this->entityManager->getConnection()->prepare($sql);
+        $stmt->execute($identifiers);
+
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getRawProductFromIdentifier(array $identifiers): array
+    {
+        if (0 === count($identifiers)) {
+            return [];
+        }
+
+        $paramNames = array_map(function ($index) {
+            return '?';
+        }, range(0, count($identifiers) - 1));
+        $sql = 'SELECT * FROM pim_catalog_product as product WHERE product.identifier IN ('. implode(',', $paramNames) .') AND product.product_type IN (\'product\', \'variant_product\')';
+
+        $stmt = $this->entityManager->getConnection()->prepare($sql);
+        $stmt->execute($identifiers);
+
+        return $stmt->fetchAll();
     }
 }
