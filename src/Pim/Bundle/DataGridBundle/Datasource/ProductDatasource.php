@@ -119,6 +119,7 @@ class ProductDatasource extends Datasource
      * @param array                     $context
      *
      * @return array
+     * @throws \Exception
      */
     private function normalizeEntityWithValues(EntityWithValuesInterface $item, array $context): array
     {
