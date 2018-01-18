@@ -77,6 +77,11 @@ class UserRepository extends EntityRepository implements UserRepositoryInterface
             $qb->where('u.firstName like :search')->setParameter('search', '%' . $search . '%');
         }
 
+        if (isset($options['identifiers']) && is_array($options['identifiers']) && !empty($options['identifiers'])) {
+            $qb->andWhere('u.firstName in (:codes)');
+            $qb->setParameter('codes', $options['identifiers']);
+        }
+
         if (isset($options['limit'])) {
             $qb->setMaxResults((int) $options['limit']);
             if (isset($options['page'])) {

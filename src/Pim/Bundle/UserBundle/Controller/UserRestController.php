@@ -53,6 +53,10 @@ class UserRestController
     {
         $options = $request->query->get('options', ['limit' => 20]);
 
+        if ($request->query->has('identifiers')) {
+            $options['identifiers'] = explode(',', $request->query->get('identifiers'));
+        }
+
         $users = $this->userRepository->findBySearch(
             $request->query->get('search'),
             $options
