@@ -56,12 +56,14 @@ class ProductDatasource extends Datasource
      */
     public function getResults()
     {
-        $attributeIdsToDisplay = $this->getConfiguration('displayed_attribute_ids');
-        $attributes = $this->getConfiguration('attributes_configuration');
-        $attributeCodesToFilter = $this->getAttributeCodesToFilter($attributeIdsToDisplay, $attributes);
-        $this->filterEntityWithValuesSubscriber->configure(
-            FilterEntityWithValuesSubscriberConfiguration::filterEntityValues($attributeCodesToFilter)
-        );
+        if (!'pimee_datasource_proposal_product' ===  $this->getConfiguration('type')) {
+            $attributeIdsToDisplay = $this->getConfiguration('displayed_attribute_ids');
+            $attributes = $this->getConfiguration('attributes_configuration');
+            $attributeCodesToFilter = $this->getAttributeCodesToFilter($attributeIdsToDisplay, $attributes);
+            $this->filterEntityWithValuesSubscriber->configure(
+                FilterEntityWithValuesSubscriberConfiguration::filterEntityValues($attributeCodesToFilter)
+            );
+        }
 
         $entitiesWithValues = $this->pqb->execute();
         $context = [
